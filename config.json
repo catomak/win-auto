@@ -1,0 +1,19 @@
+{
+   "start_time": "06:00",
+   "sleep_time": 60,
+   "automation_list": [
+      "BtcTool",
+      "Mercury"
+   ],
+   "BtcTool_path": "C:\\Users\\Operator\\Desktop\\BTCTools-v1.3.2.exe",
+   "Mercury_path": "C:\\Users\\Operator\\Desktop\\Mercury.exe",
+   "mercury_indexes": [9, 45, 12, 38, 42, 54, 32, 27, 5],
+   "excel_path": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
+   "mercury_excel_path": "C:\\Users\\Alex\\Desktop\\Mercury values.xlsx",
+   "mercury_notepad_path": "C:\\Users\\Operator\\Desktop\\mercury_values.txt",
+   "error_report": 1,
+   "tg_recipients": [
+      "294773056"
+   ],
+   "TG_API": "5155304151:AAHskhq_77dx4sFmEutOz5JMdfC9IC6Hmyo"
+}
