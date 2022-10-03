@@ -2,7 +2,7 @@ from pywinauto.application import Application
 from time import sleep
 import openpyxl
 import re
-from service import Helper, config
+from services import Helper, config
 
 
 class AppWorker:
@@ -21,7 +21,7 @@ class AppWorker:
             print(f'fail connection to {program}')
 
     @classmethod
-    def launch(cls, program_path: str, launch_type: str):
+    def launch(cls, program_path: str, launch_type):
         """
         Function for launch a program using one of two method
         :param program_path: the full program path
@@ -113,7 +113,6 @@ class MercuryWorker(AppWorker):
         :return: Meter value
         """
         dlg = app['Dialog']
-        cls._input_text_in_item(dlg, 'Параметры связиHyperlink')
         dlg['Параметры связиHyperlink'].click_input()
         sleep(1)
         dlg['СчетчикEdit'].set_text(u'')

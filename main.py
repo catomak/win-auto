@@ -1,8 +1,8 @@
 from pywinauto.application import AppStartError, ProcessNotFoundError, findbestmatch
 from os import getenv
-from notification import TgSender
-from service import Scheduler, Helper
-from automation import AppInterface
+from notifications import TgSender
+from services import Scheduler, Helper
+from automations import AppInterface
 
 config = Helper.get_config('config.json')
 
@@ -38,6 +38,7 @@ class BaseApp:
         """Function to call the alternate execution of automation programs"""
 
         app_list = [i for i in config['automation_list'].keys() if config['automation_list'][i] == 1]
+        print(app_list)
 
         for p in app_list:
             try:

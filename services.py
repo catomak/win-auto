@@ -1,7 +1,6 @@
 from datetime import datetime
 from json import load
 from time import sleep
-from main import config
 import schedule
 import re
 
@@ -89,3 +88,6 @@ class Scheduler:
         while True:
             schedule.run_pending()
             sleep(self.sleep_time)
+
+
+config = Helper.get_config('config.json')

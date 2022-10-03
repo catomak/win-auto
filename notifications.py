@@ -1,5 +1,5 @@
 from telegram import Bot
-from service import Helper
+from services import Helper
 
 
 class Sender:
