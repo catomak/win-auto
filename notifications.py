@@ -1,48 +1,52 @@
-from telegram import Bot
-from services import Helper
+import telebot
+from service import config, Helper, CUST_ERRORS
 
 
 class Sender:
 
-    def __init__(self, programs: list, token: str):
-        self.programs = programs
+    def __init__(self, token: str):
         self.token = self.invalidate_token(token)
-        self.message = Helper.ERRORS['automation_failed'] + ', '.join(programs)
+        self.recipients = Helper.convert_str_to_list(config['NOTIFICATIONS']['tg_recipients'])
 
     @staticmethod
     def invalidate_token(token):
         """check token format"""
 
-        if type(token) == str and len(token) > 0:
+        if isinstance(token, str) and token:
             return token
         else:
-            raise ValueError(Helper.ERRORS['token_error'])
+            raise ValueError(CUST_ERRORS.get('token_error'))
 
-    def send_message(self, recipient):
-        """To be overridden by a child class"""
-
-        pass
-
-    def send_out_notifications(self, recipients):
-        """To be overridden by a child class"""
-
-        pass
+    @staticmethod
+    def form_message(programs: list):
+        return CUST_ERRORS.get('automation_failed').format(programs=', '.join(programs))
 
 
 class TgSender(Sender):
 
-    def send_message_to_recipient(self, chat_id):
+    def __init__(self, token: str):
+        super().__init__(token)
+        self.bot = self.__validata_bot()
+
+    def __validata_bot(self):
+        try:
+            return telebot.TeleBot(self.token)
+        except Exception as ex:
+            print(ex)
+
+    def send_message_to_recipient(self, chat_id: str, message: str):
         """send message to one recipient"""
+        self.bot.send_message(chat_id=chat_id, text=message)
 
-        tg = Bot(self.token)
-        tg.send_message(text=self.message, chat_id=chat_id)
-
-    def send_out_notifications(self, recipients):
+    def send_out_notifications(self, recipients, programs: list):
         """send message for all recipients"""
 
-        if len(recipients) > 0:
+        msg = self.form_message(programs)
+        recipients = Helper.convert_str_to_list(recipients)
+
+        if recipients:
             for recipient in recipients:
-                self.send_message(recipient)
-            print('Error report was sent to telegram')
+                self.send_message_to_recipient(recipient, msg)
+            print('Error notification sent to telegram')
         else:
-            print(Helper.ERRORS['recipients_error'])
+            print(CUST_ERRORS.get('recipients_error'))
