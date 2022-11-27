@@ -1,9 +1,10 @@
+# from typing import override
 from pywinauto.application import Application, AppStartError, ProcessNotFoundError
 from pywinauto.findbestmatch import MatchError
 from time import sleep
 import openpyxl
 import re
-from service import Helper, config, CUST_ERRORS
+from service import Helper, config, log, ERRORS
 
 
 class AppWorker:
@@ -24,7 +25,7 @@ class AppWorker:
         try:
             return Application(backend='uia').connect(path=program)
         except FileNotFoundError:
-            print(f'fail connection to {program}')
+            log.exception(f'Fail connection to  {program}')
 
     def launch(self, program_path: str, launch_type: str = 'normal'):
         """
@@ -43,9 +44,10 @@ class AppWorker:
         try:
             return launch_types[launch_type](program_path)
         except (AppStartError, ProcessNotFoundError, MatchError):
-            print(CUST_ERRORS.get('file_not_found').format(file=self.program_name))
+            log.exception(ERRORS.get('file_not_found').format(file=self.program_name))
 
-    def __normal_launch(self, program_path) -> Application:
+    @staticmethod
+    def __normal_launch(program_path) -> Application:
         """Description in launch() doc"""
 
         app = Application(backend='uia').start(program_path)
@@ -84,14 +86,15 @@ class AppWorker:
                 dlg.OKButton.click_input()
                 return True
 
+    def work(self):
+        pass
+
 
 class BtcToolsWorker(AppWorker):
 
-    def work(self):
+    def work(self) -> bool:
         """Retrieve data on all devices in the network and save it in Excel format"""
 
-        if not self.program_obj:
-            return False
         # scanning
         dlg = self.program_obj['Dialog']
         sleep(5)
@@ -120,26 +123,28 @@ class BtcToolsWorker(AppWorker):
 
 class MercuryWorker(AppWorker):
 
-    def work(self):
-        """full process of Mercury.exe work"""
+    energy_meters = {
+            'reset_energy': 'Static74',
+            'previous_day': 'Static86'
+        }
 
-        if not self.program_obj:
-            return False
+    def work(self) -> bool:
+        """full process of Mercury.exe work"""
 
         values_dict = self.get_data()
 
         if values_dict and sum(values_dict.values()) > 0:
             try:
                 ew = ExcelWriter()
-                ew.write_data(values_dict, self.app_conf['data_path'])
+                ew.write_workbook_data(values_dict, self.app_conf['data_path'])
             except Exception as ex:
-                print(f'Excel error: [ {ex} ]')
+                log.exception(f'Excel write exception: {ex}')
                 np = NotepadWriter()
                 np.write_data(values_dict, self.app_conf['notepad_data_path'])
             finally:
                 return True
         else:
-            print(CUST_ERRORS.get('mercury_data_incorrect'))
+            log.exception(ERRORS.get('mercury_data_incorrect'))
             return False
 
     def get_data(self) -> dict:
@@ -153,13 +158,16 @@ class MercuryWorker(AppWorker):
         return meters_values
 
     @classmethod
-    def get_meter_data(cls, app: Application, meter_id: int) -> float:
+    def get_meter_data(cls, app: Application, meter_id: int) -> dict | None:
         """
         function to get the values of one electricity meter
         :param app: Application instance
         :param meter_id: Meter identifier
         :return: Meter value
         """
+
+        values = {}
+
         dlg = app['Dialog']
         dlg['Параметры связиHyperlink'].click_input()
         sleep(1)
@@ -168,20 +176,24 @@ class MercuryWorker(AppWorker):
         dlg['Уровень доступаEdit'].set_text(u'111111')
         dlg['\xa0Соединить\xa0'].click_input()
         if cls._wait_process(app, 'Ошибка!', 'Static3'):
-            return 0
+            return
         dlg.Hyperlink9.click_input()
         dlg['Параметры связиRadioButton0'].click_input()
         dlg.Button1.click_input()
         sleep(5)
-        # От сброса - Static86, за пред. сутки - Static74
-        value_data = dlg.Static74.window_text()
-        try:
-            return float(value_data)
-        except (ValueError, TypeError):
-            return 0
+        for value_type in cls.energy_meters:
+            value = dlg[value_type].window_text()
+            try:
+                values[value_type] = float(value)
+            except ValueError as e:
+                log.exception(f"Can't get value: {value}. Exception: {e}")
+        return values
 
 
 class ExcelWriter:
+
+    # TODO: передавать в метод
+    energy_meters = ['previous_day', 'reset_energy']
 
     def __init__(self):
         self.app_conf = config['Excel']
@@ -189,29 +201,51 @@ class ExcelWriter:
         self.meters_columns = range(int(self.app_conf['meter_index_col_first']),
                                     int(self.app_conf['meter_index_col_last']))
 
-    @staticmethod
-    def check_last_date(data_path: str):
-        wb = openpyxl.load_workbook(data_path)
-        sheet = wb.active
+    @classmethod
+    def check_last_date(cls, wb: openpyxl.load_workbook, sheet: str) -> bool:
+        sheet = wb[sheet]
         last_row = sheet.max_row
         last_date = sheet.cell(row=last_row, column=1).value
         if last_date == Helper.get_cur_date('dd.mm.yyyy'):
             return False
         return True
 
-    def write_data(self, data: dict, data_path: str):
+    def write_workbook_data(self, data: dict, data_path: str):
         """Recording dict data to Excel row by keys"""
 
         self.close_workbook(config['Excel']['program_path'], config['Mercury']['data_path'])
         wb = openpyxl.load_workbook(data_path)
-        sheet = wb.active
-        last_row = sheet.max_row
+        for meter_type in self.energy_meters:
+            self.write_sheet_data(wb, data, meter_type)
+        self.save_data(wb, data_path)
+
+    def write_sheet_data(self, wb: openpyxl.load_workbook, data: dict, meter_type):
         current_date = Helper.get_cur_date('dd.mm.yyyy')
+
+        if meter_type not in wb.sheetnames:
+            log.info(f"Sheet {meter_type} doesn't exists")
+            return
+        sheet = wb[meter_type]
+        last_row = sheet.max_row
+        if not self.check_last_date(wb, meter_type):
+            log.info(f"{meter_type} data on the {current_date} exists")
+            return
         date_cell = sheet.cell(row=last_row + 1, column=1)
         date_cell.value = current_date
+
         for column in self.meters_columns:
-            self.write_cell_data(data, sheet, column, last_row)
-        self.save_data(wb, data_path)
+            self.write_cell_data(data, sheet, meter_type, column, last_row)
+
+    def write_cell_data(self, data, sheet, meter_type, column, row):
+        meter_number = sheet.cell(row=self.meters_row, column=column).value
+        if not meter_number:
+            log.warning(f"Incorrect meter number in excel file")
+            return
+        if not (meter_data := data.get(meter_number)):
+            log.warning(f"Data of the meter {meter_number} doesn't exists")
+            return
+        current_cell = sheet.cell(row=row + 1, column=column)
+        current_cell.value = meter_data.get(meter_type)
 
     @staticmethod
     def save_data(app, data_path: str):
@@ -221,26 +255,19 @@ class ExcelWriter:
             current_date = Helper.get_cur_date('_dd_mm')
             app.save(data_path.replace('.xlsx', f'{current_date}.xlsx'))
 
-    def write_cell_data(self, data, sheet, column, row):
-        power_meter_number = sheet.cell(row=self.meters_row, column=column).value
-        current_cell = sheet.cell(row=row + 1, column=column)
-        current_cell.value = data.get(power_meter_number)
-
     @staticmethod
     def close_workbook(program_path: str, data_path: str):
-
         try:
             excel = AppWorker.connect(program_path)
-        except ProcessNotFoundError:
-            return None
-
-        data_file = Helper.get_file_name(data_path)
-        if excel[data_file].exists(timeout=5):
-            wb = excel[data_file]
-            wb['CloseButton'].click()
-            if wb['SaveButton'].exists():
-                wb['SaveButton'].click()
-            sleep(3)
+            data_file = Helper.get_file_name(data_path)
+            if excel[data_file].exists(timeout=5):
+                wb = excel[data_file]
+                wb['CloseButton'].click()
+                if wb['SaveButton'].exists():
+                    wb['SaveButton'].click()
+                sleep(3)
+        except Exception as e:
+            log.warning(f"Workbook closing exception: {e}")
 
 
 class NotepadWriter:
@@ -257,20 +284,20 @@ class NotepadWriter:
 class WithAppRunner:
 
     def __init__(self, program_name):
-        self.application = self.invalidate_app(program_name)
+        self.program_name = program_name
+        self.application = self.invalidate_app(self.program_name)
 
     def __enter__(self):
         try:
-            print(f'{self.application.program_name} is running...')
+            log.info(f"{self.application.program_name} is running...")
             return self.application
         except Exception as ex:
-            print(ex)
+            log.exception(f"App '{self.program_name}' start exception: {ex}")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-
         if self.application.program_obj:
             self.application.program_obj.kill()
-        print(f'{self.application.program_name} completed')
+        log.info(f'{self.application.program_name} completed')
 
     @staticmethod
     def invalidate_app(program_name):

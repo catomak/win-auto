@@ -1,11 +1,13 @@
 from datetime import datetime
 from time import sleep
 from configparser import ConfigParser
+import logging
 import schedule
 import re
+import os
 import json
 
-CUST_ERRORS = {
+ERRORS = {
     "config_not_found": "Can't find configuration file '{config}' in program directory",
     "file_not_found": "{file} not found. Check file location and its full path in configuration file",
     "start_time": "Start time must be in str format (ex.: 09:00)",
@@ -24,11 +26,21 @@ def get_config(file_name: str) -> dict:
         configuration.read(file_name)
         return configuration
     except FileNotFoundError as ex:
-        print(CUST_ERRORS.get('config_not_found').format(config=file_name))
+        print(ERRORS.get('config_not_found').format(config=file_name))
         raise ex
 
 
 config = get_config('config.ini')
+
+
+def get_logger():
+    formatting = '%(asctime)s %(levelname)s %(message)s'
+    logging.basicConfig(level="NOTSET", format=formatting, datefmt='%m/%d/%Y %I:%M:%S %p')
+    logger = logging.getLogger('app.log')
+    return logger
+
+
+log = get_logger()
 
 
 class Helper:
@@ -47,7 +59,7 @@ class Helper:
         if date_format in datetime_dict.keys():
             return datetime_dict[date_format]
         else:
-            raise SyntaxError(CUST_ERRORS.get('date_format'), {str(datetime_dict.keys())})
+            raise SyntaxError(ERRORS.get('date_format'), {str(datetime_dict.keys())})
 
     @staticmethod
     def convert_str_to_list(string: str) -> list:
@@ -96,9 +108,9 @@ class Scheduler:
     @staticmethod
     def invalidate_time(time):
         if isinstance(time, str) and re.match('^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$', time) is None:
-            raise ValueError(CUST_ERRORS.get('start_time'))
+            raise ValueError(ERRORS.get('start_time'))
         elif isinstance(time, int) and (time > 86400 or time < 0):
-            raise ValueError(CUST_ERRORS.get('sleep_time'))
+            raise ValueError(ERRORS.get('sleep_time'))
         return time
 
     def schedule_work(self, function):

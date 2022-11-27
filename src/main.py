@@ -1,8 +1,9 @@
+import logging
 from datetime import datetime
 from os import getenv
 from notifications import TgSender
-from service import Scheduler, Helper, config
-from automations import WithAppRunner
+from service import Scheduler, Helper, config, log
+from automations import WithAppRunner, ExcelWriter
 
 
 class Launcher:
@@ -11,27 +12,27 @@ class Launcher:
     def route(cls):
         """Function for program routing"""
 
-        __ROUTE_DICT = {
+        __ROUTE = {
             '1': cls.schedule_launch,
             '2': cls.test_launch,
             '3': cls.debug_launch,
         }
 
         if config['SCHEDULE']['auto_launch'] == '1':
-            return __ROUTE_DICT['1']()
+            return __ROUTE['1']()
 
         common_str = 'Choose mod (1 - schedule, 2 - one-time launch, 3 - debug): '
 
-        while (mod := input(common_str)) not in __ROUTE_DICT.keys():
+        while (mod := input(common_str)) not in __ROUTE.keys():
             print('Incorrect command')
 
-        return __ROUTE_DICT[mod]()
+        return __ROUTE[mod]()
 
     @classmethod
     def execute_programs(cls):
         """Function to call the alternate execution of automation programs"""
 
-        print(f'Start of automation at {datetime.now().strftime("%H:%M %d.%m")}')
+        log.info(f'Start automation')
 
         programs = [i for i in config['AUTOMATIONS'] if config['AUTOMATIONS'][i] == "1"]
         err_list = []
@@ -56,20 +57,43 @@ class Launcher:
     def test_launch(cls):
         """One time launch full automation"""
 
-        spc = "-" * 20
-        print(f'{spc}One-time launch program. Start at {Helper.get_cur_date("hh:mm")} {spc}')
+        log.info('Start one-time launch program')
         cls.execute_programs()
-        print(f'{spc} Test launch ended {spc}')
+        log.info('Test launch ended')
 
     @staticmethod
     def debug_launch():
         """This function is used for experiments"""
 
-        pass
+        test_data = {
+            38: {
+                'previous_day': 5.432, 
+                'reset_energy': 21345.34
+            },
+            42: {
+                'previous_day': 9.43, 
+                'reset_energy': 6745.34
+            },
+            27: {
+                'previous_day': 12.762, 
+                'reset_energy': 6666.666
+            },
+            54: {
+                'previous_day': 47.432, 
+                'reset_energy': 91385.345
+            },
+            9: {
+                'previous_day': 8.492, 
+                'reset_energy': 43687.57
+            }
+        }
+
+        ew = ExcelWriter()
+        ew.write_workbook_data(test_data, r"C:\Users\Alex\Desktop\Mercury_values.xlsx")
 
 
 def main():
-    Launcher.route()
+    Launcher.debug_launch()
 
 
 if __name__ == "__main__":
