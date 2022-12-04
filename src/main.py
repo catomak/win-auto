@@ -1,7 +1,7 @@
 from os import getenv
 from notifications import TgSender
 from service import Scheduler, config, log
-from automations import WithAppRunner
+from app_context import WithAppRunner
 
 
 class Launcher:
