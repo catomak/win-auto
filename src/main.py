@@ -1,7 +1,7 @@
 from os import getenv
 from notifications import TgSender
 from service import Scheduler, config, log
-from automations import WithAppRunner, ExcelWriter
+from automations import WithAppRunner
 
 
 class Launcher:
@@ -66,39 +66,14 @@ class Launcher:
     def debug_launch():
         """This function is used for experiments"""
 
-        test_data = {
-            38: {
-                'previous_day': 5.432, 
-                'reset_energy': 21345.34
-            },
-            42: {
-                'previous_day': 9.43, 
-                'reset_energy': 6745.34
-            },
-            27: {
-                'previous_day': 12.762, 
-                'reset_energy': 6666.666
-            },
-            54: {
-                'previous_day': 47.432, 
-                'reset_energy': 91385.345
-            },
-            9: {
-                'previous_day': 8.492, 
-                'reset_energy': 43687.57
-            }
-        }
-
-        ew = ExcelWriter()
-        ew.write_workbook_data(test_data, r"C:\Users\Alex\Desktop\Mercury_values.xlsx")
+        pass
 
 
 def main():
-    while True:
-        try:
-            Launcher.route()
-        except Exception as e:
-            log.exception(e)
+    try:
+        Launcher.route()
+    except Exception as e:
+        log.exception(e)
 
 
 if __name__ == "__main__":
