@@ -1,8 +1,6 @@
-import logging
-from datetime import datetime
 from os import getenv
 from notifications import TgSender
-from service import Scheduler, Helper, config, log
+from service import Scheduler, config, log
 from automations import WithAppRunner, ExcelWriter
 
 
@@ -37,10 +35,13 @@ class Launcher:
         programs = [i for i in config['AUTOMATIONS'] if config['AUTOMATIONS'][i] == "1"]
         err_list = []
 
+        # TODO: redo with a good context manager
         for p in programs:
             with WithAppRunner(p) as application:
-                if not application.work():
-                    err_list.append(p)
+                if application:
+                    application.work()
+                err_list.append(p)
+                continue
 
         if err_list:
             tg = TgSender(getenv('TG_API'))
@@ -93,7 +94,11 @@ class Launcher:
 
 
 def main():
-    Launcher.debug_launch()
+    while True:
+        try:
+            Launcher.route()
+        except Exception as e:
+            log.exception(e)
 
 
 if __name__ == "__main__":

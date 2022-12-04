@@ -1,4 +1,3 @@
-# from typing import override
 from pywinauto.application import Application, AppStartError, ProcessNotFoundError
 from pywinauto.findbestmatch import MatchError
 from time import sleep
@@ -289,15 +288,19 @@ class WithAppRunner:
 
     def __enter__(self):
         try:
+            if not self.application or not self.application.program_obj:
+                log.exception(f"{self.program_name}: Can't run application module. Problems with app instance")
+                return None
             log.info(f"{self.application.program_name} is running...")
             return self.application
         except Exception as ex:
-            log.exception(f"App '{self.program_name}' start exception: {ex}")
+            log.exception(f"{self.program_name}: App start exception: {ex}")
+            return None
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.application.program_obj:
             self.application.program_obj.kill()
-        log.info(f'{self.application.program_name} completed')
+            log.info(f'{self.application.program_name} completed')
 
     @staticmethod
     def invalidate_app(program_name):

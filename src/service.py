@@ -4,7 +4,6 @@ from configparser import ConfigParser
 import logging
 import schedule
 import re
-import os
 import json
 
 ERRORS = {
@@ -35,7 +34,7 @@ config = get_config('config.ini')
 
 def get_logger():
     formatting = '%(asctime)s %(levelname)s %(message)s'
-    logging.basicConfig(level="NOTSET", format=formatting, datefmt='%m/%d/%Y %I:%M:%S %p')
+    logging.basicConfig(level=logging.INFO, format=formatting, datefmt='%d/%m/%Y %H:%M:%S')
     logger = logging.getLogger('app.log')
     return logger
 
