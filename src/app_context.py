@@ -1,3 +1,4 @@
+from workers.app_worker import AppWorker
 from workers.mercury_worker import MercuryWorker
 from workers.btc_tool_worker import BtcToolsWorker
 from service import log
@@ -9,9 +10,13 @@ class WithAppRunner:
         self.program_name = program_name
         self.application = self.invalidate_app(self.program_name)
 
-    def __enter__(self):
+    def __enter__(self) -> AppWorker | None:
         if not self.application or not self.application.program_obj:
-            log.exception(f"{self.program_name}: Can't run application module. Problems with app instance")
+            log.exception(f"{self.program_name}: Can't run application module")
+            return None
+
+        if not self.application.program_obj:
+            log.exception(f"{self.program_name}: Can't get application instance")
             return None
 
         try:
@@ -27,7 +32,7 @@ class WithAppRunner:
             log.info(f'{self.application.program_name} completed')
 
     @staticmethod
-    def invalidate_app(program_name):
+    def invalidate_app(program_name) -> AppWorker:
 
         apps_dict = {
             'btctools': BtcToolsWorker,
