@@ -16,19 +16,19 @@ class MercuryWorker(AppWorker):
 
         values_dict = self.get_data()
 
-        if values_dict and sum(values_dict.values()) > 0:
-            try:
-                ew = ExcelWriter()
-                ew.write_workbook_data(values_dict, self.app_conf['data_path'])
-            except Exception as ex:
-                log.exception(f'Excel write exception: {ex}')
-                np = NotepadWriter()
-                np.write_data(values_dict, self.app_conf['notepad_data_path'])
-            finally:
-                return True
-        else:
+        if not values_dict or sum(values_dict.values()) > 0:
             log.exception(ERRORS.get('mercury_data_incorrect'))
             return False
+
+        try:
+            ew = ExcelWriter()
+            ew.write_workbook_data(values_dict, self.app_conf['data_path'])
+        except Exception as ex:
+            log.exception(f'Excel write exception: {ex}')
+            np = NotepadWriter()
+            np.write_data(values_dict, self.app_conf['notepad_data_path'])
+        finally:
+            return True
 
     def get_data(self) -> dict:
         """function to get the values of all electricity meters"""
@@ -56,20 +56,23 @@ class MercuryWorker(AppWorker):
         sleep(1)
         dlg['СчетчикEdit'].set_text(u'')
         dlg['СчетчикEdit'].type_keys(f'{meter_id}')
-        dlg['Уровень доступаEdit'].set_text(u'111111')
+        if not dlg['Уровень доступаEdit'].window_text():
+            dlg['Уровень доступаEdit'].set_text(u'111111')
         dlg['\xa0Соединить\xa0'].click_input()
         if cls._wait_process(app, 'Ошибка!', 'Static3'):
             return
         dlg.Hyperlink9.click_input()
         dlg['Параметры связиRadioButton0'].click_input()
-        dlg.Button1.click_input()
-        sleep(5)
+
         for value_type in cls.energy_meters:
+            dlg.Button1.click_input()
+            sleep(3)
             value = dlg[value_type].window_text()
             try:
                 values[value_type] = float(value)
             except ValueError as e:
                 log.exception(f"Can't get value: {value}. Exception: {e}")
+
         return values
 
 

@@ -14,7 +14,9 @@ class AppWorker:
         self.program_name = self.__class__.__name__.replace('Worker', '')
         self.app_conf = config[self.program_name]
         self.program_obj = self.launch(self.app_conf['program_path'], self.app_conf['launch_type'])
-        self.executed = False
+
+        if isinstance(self.program_obj, Application):
+            self.main_dlg = self.program_obj['Dialog']
 
     @staticmethod
     def connect(program: str):

@@ -12,19 +12,15 @@ class WithAppRunner:
 
     def __enter__(self) -> AppWorker | None:
         if not self.application or not self.application.program_obj:
-            log.exception(f"{self.program_name}: Can't run application module")
+            log.exception(f"{self.program_name}: App start exception. Can't run application module")
             return None
 
         if not self.application.program_obj:
-            log.exception(f"{self.program_name}: Can't get application instance")
+            log.exception(f"{self.program_name}: App start exception. Can't get application instance")
             return None
 
-        try:
-            log.info(f"{self.application.program_name} is running...")
-            return self.application
-        except Exception as ex:
-            log.exception(f"{self.program_name}: App start exception: {ex}")
-            return None
+        log.info(f"{self.application.program_name} is running...")
+        return self.application
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.application.program_obj:
