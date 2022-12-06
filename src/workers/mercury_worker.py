@@ -1,5 +1,5 @@
-from app_worker import AppWorker, Application
-from ..service import ERRORS, log, Helper, config
+from .app_worker import AppWorker, Application
+from src.service import ERRORS, log, Helper, config
 from time import sleep
 import openpyxl
 
@@ -7,8 +7,14 @@ import openpyxl
 class MercuryWorker(AppWorker):
 
     energy_meters = {
-            'reset_energy': 'Static74',
-            'previous_day': 'Static86'
+            'reset_energy': {
+                'field': 'Static86',
+                'button': 'RadioButton0'
+            },
+            'previous_day': {
+                'field': 'Static74',
+                'button': 'RadioButton10'
+            }
         }
 
     def work(self) -> bool:
@@ -16,7 +22,7 @@ class MercuryWorker(AppWorker):
 
         values_dict = self.get_data()
 
-        if not values_dict or sum(values_dict.values()) > 0:
+        if not values_dict:
             log.exception(ERRORS.get('mercury_data_incorrect'))
             return False
 
@@ -38,6 +44,7 @@ class MercuryWorker(AppWorker):
         meters_list = Helper.convert_str_to_list(self.app_conf['meter_indexes'])
         for meter in meters_list:
             meters_values[meter] = self.get_meter_data(mercury, meter)
+        print(meters_values)
         return meters_values
 
     @classmethod
@@ -62,15 +69,15 @@ class MercuryWorker(AppWorker):
         if cls._wait_process(app, 'Ошибка!', 'Static3'):
             return
         dlg.Hyperlink9.click_input()
-        dlg['Параметры связиRadioButton0'].click_input()
 
-        for value_type in cls.energy_meters:
+        for value_type, value_data in cls.energy_meters.items():
+            dlg[value_data.get('button')].click_input()
             dlg.Button1.click_input()
             sleep(3)
-            value = dlg[value_type].window_text()
+            value = dlg[value_data.get('field')].window_text()
             try:
                 values[value_type] = float(value)
-            except ValueError as e:
+            except (ValueError, TypeError) as e:
                 log.exception(f"Can't get value: {value}. Exception: {e}")
 
         return values

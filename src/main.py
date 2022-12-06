@@ -1,5 +1,5 @@
 from os import getenv
-from notifications import TgSender
+# from notifications import TgSender
 from service import Scheduler, config, log
 from app_context import WithAppRunner
 
@@ -43,9 +43,9 @@ class Launcher:
                 err_list.append(p)
                 continue
 
-        if err_list:
-            tg = TgSender(getenv('TG_API'))
-            tg.send_out_notifications(config['NOTIFICATIONS']['tg_recipients'], programs)
+        # if err_list:
+            # tg = TgSender(getenv('TG_API'))
+            # tg.send_out_notifications(config['NOTIFICATIONS']['tg_recipients'], programs)
 
     @classmethod
     def schedule_launch(cls):

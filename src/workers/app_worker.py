@@ -1,4 +1,4 @@
-from ..service import config, log, ERRORS, Helper
+from src.service import config, log, ERRORS, Helper
 from pywinauto.application import Application, AppStartError, ProcessNotFoundError
 from pywinauto.findbestmatch import MatchError
 from time import sleep
