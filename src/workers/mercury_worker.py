@@ -39,16 +39,14 @@ class MercuryWorker(AppWorker):
     def get_data(self) -> dict:
         """function to get the values of all electricity meters"""
 
-        mercury = self.program_obj
         meters_values = {}
         meters_list = Helper.convert_str_to_list(self.app_conf['meter_indexes'])
         for meter in meters_list:
-            meters_values[meter] = self.get_meter_data(mercury, meter)
+            meters_values[meter] = self.get_meter_data(meter)
         print(meters_values)
         return meters_values
 
-    @classmethod
-    def get_meter_data(cls, app: Application, meter_id: int) -> dict | None:
+    def get_meter_data(self, meter_id: int) -> dict | None:
         """
         function to get the values of one electricity meter
         :param app: Application instance
@@ -57,30 +55,32 @@ class MercuryWorker(AppWorker):
         """
 
         values = {}
+        self.connect_to_meter(meter_id)
 
-        dlg = app['Dialog']
-        dlg['Параметры связиHyperlink'].click_input()
-        sleep(1)
-        dlg['СчетчикEdit'].set_text(u'')
-        dlg['СчетчикEdit'].type_keys(f'{meter_id}')
-        if not dlg['Уровень доступаEdit'].window_text():
-            dlg['Уровень доступаEdit'].set_text(u'111111')
-        dlg['\xa0Соединить\xa0'].click_input()
-        if cls._wait_process(app, 'Ошибка!', 'Static3'):
-            return
-        dlg.Hyperlink9.click_input()
-
-        for value_type, value_data in cls.energy_meters.items():
-            dlg[value_data.get('button')].click_input()
-            dlg.Button1.click_input()
+        for value_type, value_data in self.energy_meters.items():
+            self.main_dlg[value_data.get('button')].click_input()
+            self.main_dlg.Button1.click_input()
             sleep(3)
-            value = dlg[value_data.get('field')].window_text()
+            value = self.main_dlg[value_data.get('field')].window_text()
             try:
                 values[value_type] = float(value)
             except (ValueError, TypeError) as e:
                 log.exception(f"Can't get value: {value}. Exception: {e}")
 
         return values
+
+    def connect_to_meter(self, meter_id):
+        self.main_dlg['Параметры связиHyperlink'].click_input()
+        sleep(1)
+        self.main_dlg['СчетчикEdit'].set_text(u'')
+        self.main_dlg['СчетчикEdit'].type_keys(f'{meter_id}')
+        if not self.main_dlg['Уровень доступаEdit'].window_text():
+            self.main_dlg['Уровень доступаEdit'].set_text(u'111111')
+        self.main_dlg['\xa0Соединить\xa0'].click_input()
+        if self._wait_process(self.program_obj, 'Ошибка!', 'Static3'):
+            return
+        self.main_dlg.Hyperlink9.click_input()
+        return True
 
 
 class ExcelWriter:

@@ -11,7 +11,7 @@ class WithAppRunner:
         self.application = self.invalidate_app(self.program_name)
 
     def __enter__(self) -> AppWorker | None:
-        if not self.application or not self.application.program_obj:
+        if not self.application:
             log.exception(f"{self.program_name}: App start exception. Can't run application module")
             return None
 

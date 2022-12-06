@@ -17,17 +17,15 @@ class BtcToolsWorker(AppWorker):
             return False
 
     def __scan_net(self):
-        dlg = self.program_obj['Dialog']
         sleep(5)
-        if dlg.NoButton:
-            dlg.NoButton.click_input()
-        dlg.ScanButton.click_input()
+        if self.main_dlg.NoButton:
+            self.main_dlg.NoButton.click_input()
+        self.main_dlg.ScanButton.click_input()
         self._wait_process(self.program_obj, 'Dialog', 'Progress')
         sleep(1)
 
     def __export_scan(self):
-        dlg = self.program_obj['Dialog']
-        dlg.Header5.click_input()
+        self.main_dlg.Header5.click_input()
         modal = self.program_obj['Dialog']
         sleep(1)
         today = Helper.get_cur_date('__dd_m')
