@@ -26,6 +26,8 @@ class MercuryWorker(AppWorker):
             log.exception(ERRORS.get('mercury_data_incorrect'))
             return False
 
+        print(values_dict)
+
         try:
             ew = ExcelWriter()
             ew.write_workbook_data(values_dict, self.app_conf['data_path'])
@@ -168,7 +170,7 @@ class NotepadWriter:
     @classmethod
     def write_data(cls, data: dict, data_path: str):
         """Recording dict data to Notepad row by keys"""
-        val_str = ' | '.join(map(str, data.values())).rjust(7, " ") + '\n'
+        val_str = '|'.join(str(d.values()).rjust(15) for d in data.values())
         full_str = Helper.get_cur_date('dd.mm.yyyy') + ' | ' + val_str
         with open(data_path, 'a') as f:
             f.write(full_str)

@@ -9,8 +9,8 @@ class BtcToolsWorker(AppWorker):
         """Retrieve data on all devices in the network and save it in Excel format"""
         try:
             self.__scan_net()
-            save_window = self.__export_scan()
-            self.__save_scan(save_window)
+            self.__export_scan()
+            self.__save_scan()
             return True
         except Exception as e:
             log.exception(e)
@@ -26,15 +26,15 @@ class BtcToolsWorker(AppWorker):
 
     def __export_scan(self):
         self.main_dlg.Header5.click_input()
+        self.main_dlg.ExportButton.click_input()
         modal = self.program_obj['Dialog']
         sleep(1)
-        today = Helper.get_cur_date('__dd_m')
-        modal[config['BtcTools']['data_folder']].click_input(button='left', double=True)
+        today = Helper.get_cur_date('_dd_mm')
+        modal[str(config['BtcTools']['data_folder'])].click_input(button='left', double=True)
         modal.ComboBox0.type_keys(f'scan{today}')
-        return modal
+        modal.SaveButton.click_input()
 
-    def __save_scan(self, save_window):
-        save_window.SaveButton.click_input()
+    def __save_scan(self,):
         save_window = self.program_obj['Dialog']
         if save_window.YesButton:
             save_window.YesButton.click_input()

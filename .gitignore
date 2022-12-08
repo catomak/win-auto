@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 config.json
+src/config.ini
 .Python
 .idea/
 build/
@@ -42,6 +43,8 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+dist
+icon
 htmlcov/
 .tox/
 .nox/
