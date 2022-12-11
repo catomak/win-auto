@@ -1,4 +1,4 @@
-from .app_worker import AppWorker, Application
+from .app_worker import AppWorker
 from src.service import ERRORS, log, Helper, config
 from time import sleep
 import openpyxl
@@ -51,22 +51,17 @@ class MercuryWorker(AppWorker):
     def get_meter_data(self, meter_id: int) -> dict | None:
         """
         function to get the values of one electricity meter
-        :param app: Application instance
         :param meter_id: Meter identifier
         :return: Meter value
         """
 
         values = {}
-        # TODO: redo without bullshit
         if not self.connect_to_meter(meter_id):
             for key in self.energy_meters.keys():
                 values[key] = 0.0
             return values
-        log.warning('ERROR Way')
+
         for value_type, value_data in self.energy_meters.items():
-            # print(value_data)
-            # self.main_dlg.print_control_identifiers()
-            # continue
             self.main_dlg[value_data.get('button')].click_input()
             self.main_dlg.Button1.click_input()
             sleep(3)
@@ -85,7 +80,7 @@ class MercuryWorker(AppWorker):
         self.main_dlg['СчетчикEdit'].type_keys(f'{meter_id}')
         self.main_dlg['Уровень доступаEdit'].set_text(u'111111')
         self.main_dlg['\xa0Соединить\xa0'].click_input()
-        if self._wait_process('Ошибка!', 'Static3'):
+        if self._wait_process(error_comp='Ошибка!', progress_field='Static3'):
             return True
         # self.main_dlg.Hyperlink9.click_input()
         return False
@@ -93,7 +88,6 @@ class MercuryWorker(AppWorker):
 
 class ExcelWriter:
 
-    # TODO: передавать в метод
     energy_meters = ['previous_day', 'reset_energy']
 
     def __init__(self):

@@ -21,7 +21,7 @@ class BtcToolsWorker(AppWorker):
         if self.main_dlg.NoButton:
             self.main_dlg.NoButton.click_input()
         self.main_dlg.ScanButton.click_input()
-        self._wait_process(self.program_obj, 'Dialog', 'Progress')
+        self._wait_process(finish_comp='Dialog', progress_field='Progress')
         sleep(1)
 
     def __export_scan(self):
