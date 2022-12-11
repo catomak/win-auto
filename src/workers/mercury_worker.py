@@ -57,9 +57,16 @@ class MercuryWorker(AppWorker):
         """
 
         values = {}
-        self.connect_to_meter(meter_id)
-
+        # TODO: redo without bullshit
+        if not self.connect_to_meter(meter_id):
+            for key in self.energy_meters.keys():
+                values[key] = 0.0
+            return values
+        log.warning('ERROR Way')
         for value_type, value_data in self.energy_meters.items():
+            # print(value_data)
+            # self.main_dlg.print_control_identifiers()
+            # continue
             self.main_dlg[value_data.get('button')].click_input()
             self.main_dlg.Button1.click_input()
             sleep(3)
@@ -76,13 +83,12 @@ class MercuryWorker(AppWorker):
         sleep(1)
         self.main_dlg['СчетчикEdit'].set_text(u'')
         self.main_dlg['СчетчикEdit'].type_keys(f'{meter_id}')
-        if not self.main_dlg['Уровень доступаEdit'].window_text():
-            self.main_dlg['Уровень доступаEdit'].set_text(u'111111')
+        self.main_dlg['Уровень доступаEdit'].set_text(u'111111')
         self.main_dlg['\xa0Соединить\xa0'].click_input()
-        if self._wait_process(self.program_obj, 'Ошибка!', 'Static3'):
-            return
-        self.main_dlg.Hyperlink9.click_input()
-        return True
+        if self._wait_process('Ошибка!', 'Static3'):
+            return True
+        # self.main_dlg.Hyperlink9.click_input()
+        return False
 
 
 class ExcelWriter:
@@ -155,12 +161,13 @@ class ExcelWriter:
         try:
             excel = AppWorker.connect(program_path)
             data_file = Helper.get_file_name(data_path)
-            if excel[data_file].exists(timeout=5):
-                wb = excel[data_file]
-                wb['CloseButton'].click()
-                if wb['SaveButton'].exists():
-                    wb['SaveButton'].click()
-                sleep(3)
+            if not excel[data_file].exists(timeout=5):
+                return
+            wb = excel[data_file]
+            wb['CloseButton'].click()
+            if wb['SaveButton'].exists():
+                wb['SaveButton'].click()
+            sleep(3)
         except Exception as e:
             log.warning(f"Workbook closing exception: {e}")
 

@@ -65,8 +65,7 @@ class AppWorker:
         explorer.kill()
         return self.connect(file_parse_dict['file_name'])
 
-    @classmethod
-    def _wait_process(cls, app, exit_comp, progress_field) -> bool:
+    def _wait_process(self, exit_comp, progress_field) -> bool:
         """
         :param app:
         :param exit_comp:
@@ -75,16 +74,16 @@ class AppWorker:
                  False - if finished after closing the pop-up window completion
         """
 
-        dlg = app['Dialog']
         while True:
-            sleep(5)
-            progress_str = re.sub("[^0-9]", "", dlg[progress_field].window_text())
+            progress_str = re.sub("[^0-9]", "", self.main_dlg[progress_field].window_text())
             progress = int(progress_str) if len(progress_str) > 0 else 0
             if progress >= 100:
-                return False
-            if dlg[exit_comp].exists():
-                dlg.OKButton.click_input()
                 return True
+            if self.main_dlg[exit_comp].exists():
+                # log.warning('ERROR EXIT')
+                self.main_dlg.OKButton.click_input()
+                return False
+            sleep(5)
 
     def work(self):
         pass
