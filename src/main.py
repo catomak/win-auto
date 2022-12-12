@@ -1,7 +1,7 @@
-from os import getenv
-# from notifications import TgSender
 from service import Scheduler, config, log
 from app_context import WithAppRunner
+from notifications import TgSender
+from os import getenv
 
 
 class Launcher:
@@ -43,9 +43,9 @@ class Launcher:
                 err_list.append(p)
                 continue
 
-        # if err_list:
-            # tg = TgSender(getenv('TG_API'))
-            # tg.send_out_notifications(config['NOTIFICATIONS']['tg_recipients'], programs)
+        if err_list:
+            tg = TgSender(getenv('TG_API'))
+            tg.send_out_notifications(config['NOTIFICATIONS']['tg_recipients'], programs)
 
     @classmethod
     def schedule_launch(cls):
@@ -60,7 +60,7 @@ class Launcher:
 
         log.info('Start one-time launch program')
         cls.execute_programs()
-        log.info('Test launch ended')
+        log.info('One-time launch ended')
 
     @staticmethod
     def debug_launch():
@@ -73,7 +73,7 @@ def main():
     try:
         Launcher.route()
     except Exception as e:
-        log.exception(e)
+        log.exception(repr(e))
 
 
 if __name__ == "__main__":

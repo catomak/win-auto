@@ -1,4 +1,4 @@
-from src.service import config, Helper, log
+from service import config, Helper, log
 from time import sleep
 from .app_worker import AppWorker
 

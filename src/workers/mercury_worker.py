@@ -1,5 +1,5 @@
 from .app_worker import AppWorker
-from src.service import ERRORS, log, Helper, config
+from service import ERRORS, log, Helper, config
 from time import sleep
 import openpyxl
 
@@ -26,8 +26,6 @@ class MercuryWorker(AppWorker):
             log.exception(ERRORS.get('mercury_data_incorrect'))
             return False
 
-        print(values_dict)
-
         try:
             ew = ExcelWriter()
             ew.write_workbook_data(values_dict, self.app_conf['data_path'])
@@ -45,7 +43,6 @@ class MercuryWorker(AppWorker):
         meters_list = Helper.convert_str_to_list(self.app_conf['meter_indexes'])
         for meter in meters_list:
             meters_values[meter] = self.get_meter_data(meter)
-        print(meters_values)
         return meters_values
 
     def get_meter_data(self, meter_id: int) -> dict | None:
@@ -81,8 +78,8 @@ class MercuryWorker(AppWorker):
         self.main_dlg['Уровень доступаEdit'].set_text(u'111111')
         self.main_dlg['\xa0Соединить\xa0'].click_input()
         if self._wait_process(error_comp='Ошибка!', progress_field='Static3'):
+            self.main_dlg.Hyperlink9.click_input()
             return True
-        # self.main_dlg.Hyperlink9.click_input()
         return False
 
 

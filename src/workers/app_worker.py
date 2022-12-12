@@ -1,4 +1,4 @@
-from src.service import config, log, ERRORS, Helper
+from service import config, log, ERRORS, Helper
 from pywinauto.application import Application, AppStartError, ProcessNotFoundError
 from pywinauto.findbestmatch import MatchError
 from time import sleep
@@ -70,9 +70,7 @@ class AppWorker:
                       error_comp: str = None,
                       progress_field: str = None) -> bool:
         """
-        :param app:
-        :param exit_comp:
-        :param progress_field:
+        param progress_field:
         :return: True - if finished after the progress bar is full,
                  False - if finished after closing the pop-up window completion
         """
