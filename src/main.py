@@ -40,8 +40,8 @@ class Launcher:
             with WithAppRunner(p) as application:
                 if application:
                     application.work()
-                err_list.append(p)
-                continue
+                else:
+                    err_list.append(p)
 
         if err_list:
             tg = TgSender(getenv('TG_API'))
