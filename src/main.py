@@ -35,12 +35,12 @@ class Launcher:
         programs = [i for i in config['AUTOMATIONS'] if config['AUTOMATIONS'][i] == "1"]
         err_list = []
 
-        # TODO: redo with a good context manager
         for p in programs:
+            correct_result = False
             with WithAppRunner(p) as application:
                 if application:
-                    application.work()
-                else:
+                    correct_result = application.work()
+                if not correct_result:
                     err_list.append(p)
 
         if err_list:

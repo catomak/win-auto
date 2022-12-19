@@ -6,7 +6,7 @@ import openpyxl
 
 class MercuryWorker(AppWorker):
 
-    energy_meters = {
+    ENERGY_METERS = {
             'reset_energy': {
                 'field': 'Static86',
                 'button': 'RadioButton0'
@@ -53,20 +53,21 @@ class MercuryWorker(AppWorker):
         """
 
         values = {}
-        if not self.connect_to_meter(meter_id):
-            for key in self.energy_meters.keys():
-                values[key] = 0.0
-            return values
 
-        for value_type, value_data in self.energy_meters.items():
-            self.main_dlg[value_data.get('button')].click_input()
-            self.main_dlg.Button1.click_input()
-            sleep(3)
-            value = self.main_dlg[value_data.get('field')].window_text()
-            try:
-                values[value_type] = float(value)
-            except (ValueError, TypeError) as e:
-                log.exception(f"Can't get value: {value}. Exception: {e}")
+        if not self.connect_to_meter(meter_id):
+            for key in self.ENERGY_METERS.keys():
+                values[key] = 0.0
+ 
+        else:
+            for value_type, value_data in self.ENERGY_METERS.items():
+                self.main_dlg[value_data.get('button')].click_input()
+                self.main_dlg.Button1.click_input()
+                sleep(3)
+                value = self.main_dlg[value_data.get('field')].window_text()
+                try:
+                    values[value_type] = float(value)
+                except (ValueError, TypeError) as e:
+                    log.exception(f"Can't get {value_type} from meter index: {value}. Exception: {e}")
 
         return values
 
@@ -85,7 +86,7 @@ class MercuryWorker(AppWorker):
 
 class ExcelWriter:
 
-    energy_meters = ['previous_day', 'reset_energy']
+    ENERGY_METERS = ['previous_day', 'reset_energy']
 
     def __init__(self):
         self.app_conf = config['Excel']
@@ -107,7 +108,7 @@ class ExcelWriter:
 
         self.close_workbook(config['Excel']['program_path'], config['Mercury']['data_path'])
         wb = openpyxl.load_workbook(data_path)
-        for meter_type in self.energy_meters:
+        for meter_type in self.ENERGY_METERS:
             self.write_sheet_data(wb, data, meter_type)
         self.save_data(wb, data_path)
 
@@ -168,6 +169,7 @@ class NotepadWriter:
     @classmethod
     def write_data(cls, data: dict, data_path: str):
         """Recording dict data to Notepad row by keys"""
+        
         val_str = '|'.join(str(d.values()).rjust(15) for d in data.values())
         full_str = Helper.get_cur_date('dd.mm.yyyy') + ' | ' + val_str
         with open(data_path, 'a') as f:
